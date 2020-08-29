@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from zipfile import ZipFile
 
 baseURL = "https://m.wuxiaworld.co/"
-novelURL = "Obsessed-with-her"
+novelURL = "Versatile-Mage"
 
 def generate(html_files):
     pccount = 0
@@ -43,14 +43,14 @@ def generate(html_files):
     for i, html in enumerate(html_files):
         newhtml = html.replace("?", "")
         newerhtml = newhtml.replace("\"","")
-        
+        newesthtml = newerhtml.replace("*","")
         basename = os.path.basename(newerhtml)
         #print("DBG File Name " + basename)
         manifest += '<item id="file_%s" href="%s" media-type="application/xhtml+xml"/>' % (
                       i+1, basename)
         spine += '<itemref idref="file_%s" />' % (i+1)
         
-        epub.write(newerhtml, "OEBPS/"+basename)
+        epub.write(newesthtml, "OEBPS/"+basename)
 
     epub.writestr("OEBPS/Content.opf", index_tpl % {
         "metadata": metadata,
@@ -83,7 +83,8 @@ def generate(html_files):
         
         ident = 0
         html = html_files[i].replace("?", "")
-        oldhtml = html.replace("\"", "")
+        bruhhtml = html.replace("\"", "")
+        oldhtml = html.replace("*", "")
         newhtml = oldhtml.replace(".\\tmp\\", "")
         chapter = find_between(oldhtml)
         chapter = str(chapter)
@@ -100,7 +101,8 @@ def generate(html_files):
         ident = 0
         html = html_files[i].replace("?", "")
         newhtml = html.replace("\"", "")
-        chapter = find_between(newhtml)
+        newerhtml = html.replace("*", "")
+        chapter = find_between(newerhtml)
         chapter = str(chapter)
         toc_mid += '''<li class="toc-Chapter-rw" id="num_%s">
             <a href="%s">%s</a>
@@ -143,7 +145,7 @@ def find_between(file):
     return soup.title.string
 
 def writeXHTML(chapterName, content):
-
+    
     converted = ""
     contentList = list(content.strings)
     for x in contentList:
@@ -166,18 +168,19 @@ def writeXHTML(chapterName, content):
 ##    converted += ("</div></body></html>")
 ##    return converted
     test = chapterName.replace("?", "")
-    newtest = test.replace("\"", "")
+    oldtest = test.replace("\"", "")
+    newtest = oldtest.replace("*", "")
     #print("DBG DIR PATH " + os.getcwd() + "\\" + newtest + ".xhtml")
     file = codecs.open(os.getcwd() + "\\tmp\\" + newtest + ".xhtml", "a+", "utf-8")
     file.write("""<html xmlns="http://www.w3.org/1999/xhtml">
                     <head>
                     <meta charset="urf-8"/>
-                        <title>""" + newtest + """</title>
+                        <title>""" + chapterName + """</title>
                     </head>
                     <body><div>
                     """)
 
-    file.write("<h1>" + newtest + "</h1>")
+    file.write("<h1>" + chapterName + "</h1>")
     
     for index, lines in enumerate(contentList):            
         file.write("<p>" + lines + "</p>")
@@ -211,7 +214,7 @@ else:
         os.mkdir("tmp")
     for item in urlDict:
         
-        writeXHTML(item, getChapter(baseURL + urlDict[item]))
+        #writeXHTML(item, getChapter(baseURL + urlDict[item]))
         html_files.append(".\\tmp\\" + item + ".xhtml")
         count += 1
         pc = str(round(count/complete * 100,2))
