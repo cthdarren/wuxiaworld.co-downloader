@@ -4,9 +4,10 @@ from bs4 import BeautifulSoup
 from zipfile import ZipFile
 
 baseURL = "https://m.wuxiaworld.co/"
-novelURL = "Warlock-of-the-Magus-World"
+novelURL = "Obsessed-with-her"
 
 def generate(html_files):
+    pccount = 0
     epub = ZipFile(novelURL + ".epub", "w")
     epub.writestr("mimetype", "application/epub+zip")
     epub.writestr("META-INF/container.xml", '''<container version="1.0"
@@ -38,12 +39,13 @@ def generate(html_files):
         <dc:identifier xmlns:dc="http://purl.org/dc/elements/1.1/">%(uuid)s"</dc:identifier>''' % {
         "novelname": novelURL, "author": "none", "uuid": uniqueid}
     toc_manifest = '<item href="toc.xhtml" id="toc" properties="nav" media-type="application/xhtml+xml"/>'
-
+    
     for i, html in enumerate(html_files):
         newhtml = html.replace("?", "")
         newerhtml = newhtml.replace("\"","")
+        
         basename = os.path.basename(newerhtml)
-        print(basename)
+        #print("DBG File Name " + basename)
         manifest += '<item id="file_%s" href="%s" media-type="application/xhtml+xml"/>' % (
                       i+1, basename)
         spine += '<itemref idref="file_%s" />' % (i+1)
@@ -74,17 +76,23 @@ def generate(html_files):
             %(toc_end)s'''
     toc_mid = ""
     toc_end = '''</ol></nav></section></body></html>'''
-
+    
     for i, y in enumerate(html_files):
+        pccount += 1
+        print(str(round(pccount/len(html_files) * 100,2)) + "%", end="\r")
+        
         ident = 0
         html = html_files[i].replace("?", "")
-        newhtml = html.replace("\"", "")
-        chapter = find_between(newhtml)
+        oldhtml = html.replace("\"", "")
+        newhtml = oldhtml.replace(".\\tmp\\", "")
+        chapter = find_between(oldhtml)
         chapter = str(chapter)
         toc_mid += '''<li class="toc-Chapter-rw" id="num_%s">
             <a href="%s">%s</a>
             </li>''' % (i, newhtml, chapter)
-
+        
+    print("\n")
+    
     epub.writestr("OEBPS/toc.xhtml", toc_start % {"novelname": novelURL, "toc_mid": toc_mid, "toc_end": toc_end})
     epub.close()
     
@@ -101,27 +109,26 @@ def generate(html_files):
 def getURLS(novel):
     urlDict = {}
     res = requests.get(baseURL + novel + "/all.html")
-    soup = BeautifulSoup(res.text)
-    chapters = soup.find(id="chapterlist")
-    for x in chapters.findAll("p"):
-        chName = x.find("a").decode_contents()
+    soup = BeautifulSoup(res.text, features="html.parser")
+    chapters = soup.find(class_="chapter-list")
+    for x in chapters.findAll("a"):
+        chName = x.find("p").decode_contents()
         chName = chName.replace("?", "")
         chName = chName.replace("\"", "")
         chName = chName.replace(":", "")
-        urlDict[chName] = x.find("a")["href"]
+        urlDict[chName] = x["href"]
     
-    del urlDict["↓ To Bottom"]
     return urlDict
 
 def getChapter(url):
     res = requests.get(url)
-    soup = BeautifulSoup(res.text)
-
-    content = soup.find(id="chaptercontent")
+    soup = BeautifulSoup(res.text, features="html.parser")
+    #print("DBG URL " + url)
+    content = soup.find(class_="chapter-entity")
 
     for x in content.findAll("script"):
         x.decompose()
-        
+    
     for div in content.findAll("div"):
         div.decompose()
 
@@ -160,8 +167,8 @@ def writeXHTML(chapterName, content):
 ##    return converted
     test = chapterName.replace("?", "")
     newtest = test.replace("\"", "")
-    print(os.getcwd() + "\\" + newtest + ".xhtml")
-    file = codecs.open(os.getcwd() + "\\" + newtest + ".xhtml", "a+", "utf-8")
+    #print("DBG DIR PATH " + os.getcwd() + "\\" + newtest + ".xhtml")
+    file = codecs.open(os.getcwd() + "\\tmp\\" + newtest + ".xhtml", "a+", "utf-8")
     file.write("""<html xmlns="http://www.w3.org/1999/xhtml">
                     <head>
                     <meta charset="urf-8"/>
@@ -176,17 +183,47 @@ def writeXHTML(chapterName, content):
         file.write("<p>" + lines + "</p>")
     file.write("</div></body></html>")
     file.close()     
-    
-urlDict = getURLS(novelURL)
-html_files = []
-count = 0
-print("Getting chapter contents...")
-for item in urlDict:
-    writeXHTML(item, getChapter(baseURL + novelURL + "/" + urlDict[item]))
-    html_files.append(item + ".xhtml")
-    count += 1
-    print(count)
-print("Generating Files")
 
-generate(html_files)
-os.system("del *.xhtml")
+if "/" in novelURL:
+    print("""
+================================================================
+#                                                              #
+#            Error, please ensure that there are               #
+#                no slashes in the novelURL                    #
+#                                                              #
+================================================================
+""")
+else:
+    urlDict = getURLS(novelURL)
+    html_files = []
+    count = 0
+    print("""
+======================================
+#                                    #
+#     Getting chapter contents...    #
+#                                    #
+======================================
+
+""")
+    complete = len(urlDict)
+    if not os.path.exists(os.getcwd() + "\\tmp"):
+        print("nope")
+        os.mkdir("tmp")
+    for item in urlDict:
+        
+        writeXHTML(item, getChapter(baseURL + urlDict[item]))
+        html_files.append(".\\tmp\\" + item + ".xhtml")
+        count += 1
+        pc = str(round(count/complete * 100,2))
+        print(pc + "%", end="\r")
+    print("""\n
+======================================
+#                                    #
+#         Compiling Files...         #
+#                                    #
+======================================
+\n""")
+    generate(html_files)
+    os.system("del .\\tmp\\*.xhtml")
+
+    print("#############  Complete! #############\n")
