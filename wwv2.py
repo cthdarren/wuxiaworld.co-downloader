@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from zipfile import ZipFile
 
 baseURL = "https://m.wuxiaworld.co/"
-novelURL = "Versatile-Mage"
+novelURL = "Renegade-Immortal"
 
 def generate(html_files):
     pccount = 0
@@ -213,8 +213,7 @@ else:
         print("nope")
         os.mkdir("tmp")
     for item in urlDict:
-        
-        #writeXHTML(item, getChapter(baseURL + urlDict[item]))
+        writeXHTML(item, getChapter(baseURL + urlDict[item]))
         html_files.append(".\\tmp\\" + item + ".xhtml")
         count += 1
         pc = str(round(count/complete * 100,2))
