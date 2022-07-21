@@ -3,7 +3,7 @@ import requests, os, codecs, shutil, os.path, sys, time, uuid, ssl
 from bs4 import BeautifulSoup
 from zipfile import ZipFile
 
-baseURL = "https://www.wuxiaworld.co/"
+baseURL = "https://m.wuxiaworld.co/"
 novelURL = "Martial-World"
 
 def generate(html_files):
