@@ -1,3 +1,11 @@
+<b><h1>Project Discontinued</h1>
+<ol> 
+  <li>Due to the website shutting down and wuxiaworld no longer allowing free unlimited access, this project has been discontinued and will not be maintained. </li>
+<li><i>Note that the python script is no longer working.</i></li>
+</ol></b>
+
+
+
 <h2>To Download</h2>
 <ol>
   <li>
